@@ -5,13 +5,14 @@ const app = express();
 
 module.exports = {
   reIndex: function (req, res) {
-    res.locals.user1 = app.locals.user1;
+   
     res.status(200).json({ message: "login success", user: req.body.user });
   },
 
   postCreate: async function (req, res) {
     console.log(app.locals.user1);
-    if (await User.find({ user: req.body.user })) {
+    const user= await User.find({ user: req.body.user });
+    if (user.length >= 1) {
       res.status(501).json({ error: "User exsited" });
     } else {
       User.create({
