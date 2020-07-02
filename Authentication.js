@@ -1,13 +1,15 @@
 const express = require("express");
 const app = express();
 const User = require("./user.model");
-module.exports = {loginCheck : async function (req, res, next) {
+const jwt = require("jsonwebtoken");
+module.exports = {
+  loginCheck: async function (req, res, next) {
     // db.read()
     // var user = db.get("users").find({ name: req.body.name });
     var user = await User.find({ user: req.body.user });
     user = user[0];
     var errors = [];
-  
+
     if (user === undefined) {
       errors.push("User doesn't exist.");
       return res.status(501).json({
@@ -16,23 +18,22 @@ module.exports = {loginCheck : async function (req, res, next) {
       });
     }
     if (user.password !== req.body.password) {
-        errors.push("Wrong password.");
-        return res.status(501).json({
-            error: errors,
-            value: req.body.user,
-          });
-      }
+      errors.push("Wrong password.");
+      return res.status(501).json({
+        error: errors,
+        value: req.body.user,
+      });
+    }
     if (req.body.user === user.user && req.body.password === user.password) {
-      res.cookie("id", user._doc._id, { signed: true });
-  
-      app.locals.user1 = user;
-      res.locals.user1 = app.locals.user1;
-  
+      var token = jwt.sign(
+        { user: req.body.user, password: user.password },
+        process.env.TOKENKEY
+      );
+      res.status(201).json({ token, user: req.body.user });
+
       return next();
     }
-  
-   
-  
+
     if (errors !== []) {
       return res.json({
         error: errors,
@@ -40,25 +41,31 @@ module.exports = {loginCheck : async function (req, res, next) {
       });
     }
   },
-  logincheck_2 : async function (req, res, next) {
-    var errors = [];
-  
-    res.locals.user1 = app.locals.user1;
-    if (req.signedCookies.id === undefined) {
-      return res.json( {
-        error: errors,
-        value: req.body.user,
+  logincheck_2: async function (req, res, next) {
+  console.log(req.headers.authorization)
+    if (req.headers.authorization !== "no") {
+      var errors = [];
+      var decoded = jwt.verify(req.headers.authorization, process.env.TOKENKEY);
+
+      const userReq = decoded.user;
+      const passwordReq = decoded.password;
+      var user = await User.find({ user: userReq, password: passwordReq });
+      console.log(user)
+      if (user !== []) {
+        console.log(user);
+        res.status(202).json({
+          message: "ok",
+        });
+        next();
+      } else {
+        res.status(501).json({
+          error: "You must to login first.",
+        });
+      }
+    } else {
+      res.status(501).json({
+        error: "You must to login first.",
       });
     }
-    var userMatched = await User.findById(req.signedCookies.id);
-    
-    console.log(req.signedCookies.id === userMatched.id)
-  
-    if (
-      // req.signedCookies.id === db.get("users").find({ id: req.signedCookies.id }).value().id
-  
-      req.signedCookies.id === userMatched.id
-    ) {
-      next();
-    }
-  }}
+  },
+};
