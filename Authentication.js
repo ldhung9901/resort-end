@@ -26,7 +26,7 @@ module.exports = {
     }
     if (req.body.user === user.user && req.body.password === user.password) {
       var token = jwt.sign(
-        { user: req.body.user, password: user.password },
+        { user: req.body.user, password: "no password" },
         process.env.TOKENKEY
       );
       res.status(201).json({ token, user: req.body.user });
