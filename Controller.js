@@ -8,8 +8,8 @@ module.exports = {
   reIndex: function (req, res) {
    try{
     res.status(200).json({ message: "login success", user: req.body.user });
-  }}
-  catch(e){res.status(501).json({error: e})},
+  }
+  catch(e){res.status(501).json({error: e})}},
 
   postCreate: async function (req, res) {
     console.log(app.locals.user1);
